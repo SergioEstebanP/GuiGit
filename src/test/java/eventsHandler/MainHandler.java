@@ -1,27 +1,72 @@
 package eventsHandler;
 
-import javafx.scene.control.Alert;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ProgressBar;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 import org.eclipse.jgit.api.CommitCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.PushCommand;
 import org.eclipse.jgit.transport.UsernamePasswordCredentialsProvider;
-import services.UpdatingThread;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class MainHandler {
+    private static String filePath;
 
     public MainHandler () {
         super();
     }
+
+    public static void openRepositoryAndSetTreeView(TreeView<String> folder, Stage primaryStage) {
+        DirectoryChooser dc = new DirectoryChooser();
+        dc.setInitialDirectory(new File(System.getProperty("user.home")));
+        File choice = dc.showDialog(primaryStage);
+        if(choice == null || ! choice.isDirectory()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setHeaderText("Could not open directory");
+            alert.setContentText("The file is invalid.");
+
+            alert.showAndWait();
+        } else {
+            MainHandler.filePath = choice.toString();
+            folder.setRoot(getNodesForDirectory(choice));
+        }
+
+    }
+
+    public static TreeItem<String> getNodesForDirectory(File directory) { //Returns a TreeItem representation of the specified directory
+        TreeItem<String> root = new TreeItem<String>(directory.getName());
+        for(File f : directory.listFiles()) {
+            System.out.println("Loading " + f.getName());
+            if(f.isDirectory()) { //Then we call the function recursively
+                root.getChildren().add(getNodesForDirectory(f));
+            } else {
+                root.getChildren().add(new TreeItem<String>(f.getName()));
+            }
+        }
+        return root;
+    }
+
+    public static void seeFile (TreeView<String> folder, TextArea print) {
+        String [] aux = folder.getSelectionModel().getSelectedItem().toString().split(":");
+        MainHandler.filePath = MainHandler.filePath + "\\" + aux[1].substring(1, aux[1].length()-2);
+        String data = "";
+        try {
+            data = new String(Files.readAllBytes(Paths.get(MainHandler.filePath)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println(data);
+
+
+    }
+
 
     public void btnOK_Click(ProgressBar pb, HBox bPane, BorderPane mPane, Stage mainStage, String projectPath, TextField txtCommitSentence, CheckBox chkGithub, CheckBox chkBitbucket) {
 

@@ -32,6 +32,19 @@ Currently the project allows the user to:
 
 In some future releases the gui must should have this functions:
 
+- **Link git account service**: program should allow the user to save the user credentials of services as github, bitbucket ot gitlab to auto push without inserting credentials. 
+- **New commands**: program will run this commands.
+    - Pull request.
+    - Pull.
+    - Push.
+    - Branch selector.
+    - Fetch.
+    - Merge. 
+- **Log console**: it will provide a log console to see the command's output at anytime. 
+- **Staged and unstaged files**: it will provide some text area where showing the staged and unstaged files in the repository. 
+
+
+
 
 
 
