@@ -71,11 +71,11 @@ public class InitialPage extends Application {
         mainPanel.setCenter(grid);
 
         // events
-        openRepo.setOnAction(e -> MainHandler.openRepositoryAndSetTreeView(folder, primaryStage));
+        openRepo.setOnAction(e -> MainHandler.openRepositoryAndSetTreeView(folder, primaryStage, repositoryName));
         linkAccount.setOnAction(e -> MainHandler.switchToCredentialsScene());
         seeFileButton.setOnAction(e -> MainHandler.seeFile(folder, logConsole));
-        commitButton.setOnAction(e -> MainHandler.addAndCommit(logConsole, commitMessage, folder, stage));
-        pushButton.setOnAction(e -> MainHandler.push(logConsole, commitMessage));
+        commitButton.setOnAction(e -> MainHandler.addAndCommit(logConsole, commitMessage, folder, stage, repositoryName));
+        pushButton.setOnAction(e -> MainHandler.push(logConsole, commitMessage, folder, stage, repositoryName));
 
         Scene scene = new Scene(mainPanel);
         primaryStage.setScene(scene);
@@ -88,7 +88,7 @@ public class InitialPage extends Application {
     public void itemsAppearanceConfiguration () {
         double buttonHeight = 100;
         double buttonWidth = 30;
-        repositoryName.setText("Default");
+        repositoryName.setText("");
         pullButton.setPrefSize(buttonHeight, buttonWidth);
         pullRequestButton.setPrefSize(buttonHeight, buttonWidth);
         pushButton.setPrefSize(buttonHeight, buttonWidth);
@@ -99,6 +99,7 @@ public class InitialPage extends Application {
         folder.setPrefSize(200, 20);
         commitMessage.setPrefSize(100, 50);
         commitMessage.setPromptText("Insert your commit sentence!");
+        commitMessage.setWrapText(true);
         logConsole.setPrefHeight(160);
         logConsole.setWrapText(true);
         logConsole.setPromptText("Log console and file watcher");

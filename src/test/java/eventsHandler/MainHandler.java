@@ -13,6 +13,7 @@ import services.DirectorySelector;
 import services.errors.ErrorLoginScene;
 import services.Global;
 import services.PasswordDialog;
+import services.errors.ErrorPushWithoutCommit;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -29,10 +30,9 @@ public class MainHandler {
         super();
     }
 
-    public static void openRepositoryAndSetTreeView(TreeView<String> folder, Stage primaryStage) {
-        DirectorySelector.execute(folder, primaryStage);
+    public static void openRepositoryAndSetTreeView(TreeView<String> folder, Stage primaryStage, Label repoName) {
+        DirectorySelector.execute(folder, primaryStage, repoName);
     }
-
 
 
     public static void seeFile(TreeView<String> folder, TextArea print) {
@@ -44,68 +44,86 @@ public class MainHandler {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println(data);
+        print.setText(data);
     }
 
-    public static void addAndCommit(TextArea logConsole, TextArea commitMessage, TreeView<String> tree, Stage stage) {
+    public static void addAndCommit(TextArea logConsole, TextArea commitMessage, TreeView<String> tree, Stage stage, Label name) {
         if (Global.registered) {
             if (Global.username.equals("")) {
-                if (new File("sergi2312@gmail.com.credentials").exists()) {
-                    File credentials = new File("sergi2312@gmail.com.credentials");
+                if (autenticationAndRepo(tree, stage, name)) {
                     try {
-                        Scanner in = new Scanner(credentials);
-                        Global.username = in.nextLine();
-                        Global.password = in.nextLine();
+                        Global.git = Git.open(new File(Global.repoDir));
+                        Global.git.add().addFilepattern("*");
+                        Global.filesAdded = true;
+                        CommitCommand commmit = Global.git.commit();
+                        commmit.setMessage(commitMessage.getText()).call();
+                        logConsole.setText("Add files and commit, ready to push!");
                     } catch (Exception e) {
+                        logConsole.setText("Something goes wrong while staging files and committing, try again!");
                         e.printStackTrace();
                     }
                 }
             }
-            if (!Global.repoOpen) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setHeaderText("Repository not selected!");
-                alert.setContentText("You must select one repository to perform the actions.");
-                alert.showAndWait();
-                DirectorySelector.execute(tree, stage);
-            } else {
-                try {
-                    Global.git = Git.open(new File(Global.repoDir));
-                    Global.git.add().addFilepattern("*");
-                    Global.filesAdded = true;
-                    CommitCommand commmit =Global.git.commit();
-                    commmit.setMessage(commitMessage.getText()).call();
-                    logConsole.setText("Add files and commit, ready to push!");
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-
-        }else {
+        } else {
             MainHandler.switchToErrorLoginScene();
         }
-
     }
 
-    public static void push(TextArea logConsole, TextArea commitMessage) {
-        if (Global.filesAdded) {
+    private static boolean autenticationAndRepo(TreeView<String> tree, Stage stage, Label name) {
+        if (new File("sergi2312@gmail.com.credentials").exists()) {
+            File credentials = new File("sergi2312@gmail.com.credentials");
             try {
-                PushCommand pushCommand = Global.git.push();
-                pushCommand.setCredentialsProvider(new UsernamePasswordCredentialsProvider(Global.username, Global.password));
-                pushCommand.call();
-                commitMessage.clear();
-                logConsole.setText("Push executed succesfully!");
+                Scanner in = new Scanner(credentials);
+                Global.username = in.nextLine();
+                Global.password = in.nextLine();
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        } else {
+            return false;
         }
-        Global.filesAdded = false;
+        if (Global.repoOpen) {
+            return true;
+        } else {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setHeaderText("Repository not selected!");
+            alert.setContentText("You must select one repository to perform the actions.");
+            alert.showAndWait();
+            DirectorySelector.execute(tree, stage, name);
+            return false;
+        }
+    }
+
+    public static void push(TextArea logConsole, TextArea commitMessage, TreeView<String> tree, Stage stage, Label name ) {
+        if (Global.registered) {
+            if (autenticationAndRepo(tree, stage, name)) {
+                if (Global.filesAdded) {
+                    try {
+                        PushCommand pushCommand = Global.git.push();
+                        pushCommand.setCredentialsProvider(new UsernamePasswordCredentialsProvider(Global.username, Global.password));
+                        pushCommand.call();
+                        commitMessage.clear();
+                        logConsole.setText("Push executed succesfully!");
+                    } catch (Exception e) {
+                        logConsole.setText("Something goes wrong while pushing into the repository, try again!");
+                        e.printStackTrace();
+                    }
+                } else {
+                    ErrorPushWithoutCommit.execute();
+                }
+                Global.filesAdded = false;
+            }
+        } else {
+            MainHandler.switchToErrorLoginScene();
+        }
+
     }
 
     public static void switchToCredentialsScene() {
         PasswordDialog.execute();
     }
 
-    public static void switchToErrorLoginScene () {
+    public static void switchToErrorLoginScene() {
         ErrorLoginScene.execute();
         PasswordDialog.execute();
     }
