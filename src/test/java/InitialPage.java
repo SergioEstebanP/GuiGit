@@ -6,9 +6,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import services.Global;
 
 import java.io.File;
-import java.util.regex.Pattern;
+
 
 public class InitialPage extends Application {
 
@@ -27,6 +28,7 @@ public class InitialPage extends Application {
     private Menu helpMenu = new Menu("Help");
     private MenuItem openRepo = new MenuItem("Open repository");
     private MenuItem createRepository = new MenuItem("Create repository");
+    private MenuItem linkAccount = new MenuItem("Link Github Account");
 
     private Label repositoryName = new Label("");
     private Label repoFiles = new Label("Repository Files: ");
@@ -45,11 +47,48 @@ public class InitialPage extends Application {
     private TextArea logConsole = new TextArea();
 
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) {
+
+        //first of all, we have to see if we have the credentials of the user
+        if (new File("sergi2312@gmail.com.credentials").exists())
+            Global.registered = true;
+        else
+            Global.registered = false;
+
         stage = primaryStage;
 
+        // stage configuration
+        itemsAppearanceConfiguration();
+        upperToolbarConfiguration();
+
+        BorderPane mainPanel = new BorderPane();
+        HBox topPane = new HBox(upperMenuBar);
+        mainPanel.setTop(topPane);
+
+        GridPane grid = new GridPane();
+        mainGridConfiguration(grid);
+
+        mainPanel.setCenter(grid);
+
+        // events
+        openRepo.setOnAction(e -> MainHandler.openRepositoryAndSetTreeView(folder, primaryStage));
+        linkAccount.setOnAction(e -> MainHandler.switchToCredentialsScene());
+        seeFileButton.setOnAction(e -> MainHandler.seeFile(folder, logConsole));
+        commitButton.setOnAction(e -> MainHandler.addAndCommit(logConsole, commitMessage, folder, stage));
+        pushButton.setOnAction(e -> MainHandler.push(logConsole, commitMessage));
+
+        Scene scene = new Scene(mainPanel);
+        primaryStage.setScene(scene);
+        primaryStage.setTitle("Git Gui");
+        primaryStage.setResizable(true);
+        primaryStage.show();
+
+    }
+
+    public void itemsAppearanceConfiguration () {
         double buttonHeight = 100;
         double buttonWidth = 30;
+        repositoryName.setText("Default");
         pullButton.setPrefSize(buttonHeight, buttonWidth);
         pullRequestButton.setPrefSize(buttonHeight, buttonWidth);
         pushButton.setPrefSize(buttonHeight, buttonWidth);
@@ -59,10 +98,15 @@ public class InitialPage extends Application {
 
         folder.setPrefSize(200, 20);
         commitMessage.setPrefSize(100, 50);
+        commitMessage.setPromptText("Insert your commit sentence!");
         logConsole.setPrefHeight(160);
+        logConsole.setWrapText(true);
+        logConsole.setPromptText("Log console and file watcher");
 
         upperMenuBar.setPrefWidth(600);
+    }
 
+    public void upperToolbarConfiguration () {
         // Create the menu bar and add all the components
         upperMenuBar.getMenus().add(toolsMenu);
         upperMenuBar.getMenus().add(settingsMenu);
@@ -70,17 +114,14 @@ public class InitialPage extends Application {
 
         toolsMenu.getItems().add(openRepo);
         toolsMenu.getItems().add(createRepository);
+        toolsMenu.getItems().add(linkAccount);
 
-        HBox topPane = new HBox(upperMenuBar);
-        BorderPane mainPanel = new BorderPane();
-        mainPanel.setTop(topPane);
+    }
 
-        repositoryName.setText("Default");
-        GridPane grid = new GridPane();
+    public void mainGridConfiguration (GridPane grid) {
         grid.setPadding(new Insets(10));
         grid.setHgap(10);
         grid.setVgap(10);
-
         grid.add(repositoryName, 0, 0);
         grid.setColumnSpan(repositoryName, 3);
         grid.setHalignment(repositoryName, HPos.CENTER);
@@ -101,17 +142,6 @@ public class InitialPage extends Application {
         grid.setColumnSpan(repoFiles, 3);
         grid.setHalignment(repoFiles, HPos.CENTER);
         grid.add(folder, 3, 1, 1, 4);
-        mainPanel.setCenter(grid);
-
-        // events
-        openRepo.setOnAction(e -> MainHandler.openRepositoryAndSetTreeView(folder, primaryStage));
-        seeFileButton.setOnAction(e -> MainHandler.seeFile(folder, logConsole));
-
-        Scene scene = new Scene(mainPanel);
-        primaryStage.setScene(scene);
-        primaryStage.setTitle("Git Gui");
-        primaryStage.setResizable(true);
-        primaryStage.show();
-
     }
+
 }
